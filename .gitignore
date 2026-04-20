@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+backend/booking_app.db
+backend/.pytest_cache/
+backend/.venv/
+frontend/node_modules/
+frontend/dist/
