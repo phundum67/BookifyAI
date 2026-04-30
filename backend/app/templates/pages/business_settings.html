@@ -7,10 +7,10 @@
   </header>
   <section class="settings-group">
     <a class="settings-row" href="{{ url_for('pages.business_profile') }}">Edit Profile<span>Update business details and pricing</span></a>
-    <button class="settings-row" type="button">Account Info<span>{{ user.email }}</span></button>
-    <button class="settings-row" type="button">Help / Support<span>Get help managing your business</span></button>
-    <button class="settings-row" type="button">Policies<span>Booking and cancellation information</span></button>
-    <button class="settings-row" type="button">About Us<span>Built for easy local booking</span></button>
+    <div class="settings-row">Account Info<span>{{ user.email }}</span></div>
+    <div class="settings-row">Help / Support<span>Get help managing your business</span></div>
+    <div class="settings-row">Policies<span>Booking and cancellation information</span></div>
+    <div class="settings-row">About Us<span>Built for easy local booking</span></div>
     <button id="logout-button" class="settings-row danger" type="button">Logout<span>Sign out of this device</span></button>
   </section>
 </main>

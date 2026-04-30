@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Modal, Pressable, SafeAreaView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 import { api, clearAuthToken, loadAuthToken } from "./src/api/client";
 import { COLORS } from "./src/constants";
@@ -326,10 +327,10 @@ export default function App() {
   }
 
   return (
-    <>
+    <SafeAreaProvider>
       {content}
       {renderNoticeModal()}
-    </>
+    </SafeAreaProvider>
   );
 }
 

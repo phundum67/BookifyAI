@@ -2,7 +2,9 @@ package com.bookifyai.app;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.webkit.CookieManager;
@@ -15,9 +17,31 @@ import android.widget.ProgressBar;
 
 public class MainActivity extends Activity {
     private static final String APP_URL = "https://phundum67.pythonanywhere.com/";
+    private static final String ALLOWED_HOST = normalizeHost(Uri.parse(APP_URL).getHost());
 
     private WebView webView;
     private ProgressBar progressBar;
+
+    private static String normalizeHost(String host) {
+        if (host == null) {
+            return "";
+        }
+
+        String normalized = host.trim().toLowerCase();
+        if (normalized.startsWith("www.")) {
+            normalized = normalized.substring(4);
+        }
+        return normalized;
+    }
+
+    private static boolean isTrustedHost(Uri uri) {
+        if (uri == null) {
+            return false;
+        }
+
+        String host = normalizeHost(uri.getHost());
+        return !host.isEmpty() && host.equals(ALLOWED_HOST);
+    }
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -52,7 +76,16 @@ public class MainActivity extends Activity {
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                view.loadUrl(request.getUrl().toString());
+                Uri uri = request != null ? request.getUrl() : null;
+                if (isTrustedHost(uri)) {
+                    view.loadUrl(uri.toString());
+                    return true;
+                }
+
+                if (uri != null) {
+                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri.toString()));
+                    view.getContext().startActivity(intent);
+                }
                 return true;
             }
 

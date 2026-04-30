@@ -10,11 +10,14 @@
   </header>
   <section class="filter-card">
     <div class="two-col">
-      <input id="browse-search" placeholder="Search businesses">
-      <select id="browse-category"><option value="">Category</option></select>
+      <label class="sr-only" for="browse-search">Search businesses</label>
+      <input id="browse-search" placeholder="Search businesses" aria-label="Search businesses">
+      <label class="sr-only" for="browse-category">Category</label>
+      <select id="browse-category" aria-label="Category"><option value="">Category</option></select>
     </div>
     <div class="search-line">
-      <input id="browse-location" placeholder="Location">
+      <label class="sr-only" for="browse-location">Location</label>
+      <input id="browse-location" placeholder="Location" aria-label="Location">
       <button id="browse-submit" class="btn btn-primary">Search</button>
     </div>
     <div id="price-filters" class="scroll-chips"></div>

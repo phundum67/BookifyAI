@@ -4,6 +4,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Building2, CalendarDays, Clock3, House, Search, User } from "lucide-react-native";
 import { Image as ExpoImage } from "expo-image";
 import { VideoView, useVideoPlayer } from "expo-video";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   ActivityIndicator,
   Alert,
@@ -16,7 +17,6 @@ import {
   Pressable,
   Share,
   ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
   TextInput,
@@ -36,20 +36,18 @@ const BUSINESS_CATEGORY_COLORS = {
   "Entertainment & Leisure": "#14B8A6"
 };
 
-const SCREEN_TOP_PADDING = Platform.OS === "android"
-  ? Math.max((StatusBar.currentHeight || 0) + 12, 28)
-  : 20;
+const SCREEN_TOP_PADDING = 12;
 
 export function Screen({ children, bottomTabs }) {
   return (
-    <View style={styles.screen}>
+    <SafeAreaView edges={["top", "left", "right"]} style={styles.screen}>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.keyboardAvoiding}>
         <ScrollView contentContainerStyle={[styles.scrollContent, bottomTabs ? styles.withTabs : null]} keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled">
           {children}
         </ScrollView>
       </KeyboardAvoidingView>
       {bottomTabs}
-    </View>
+    </SafeAreaView>
   );
 }
 
