@@ -359,6 +359,7 @@
   }
 
   async function initBrowse() {
+    const filterForm = document.getElementById("browse-filters");
     const search = document.getElementById("browse-search");
     const categorySelect = document.getElementById("browse-category");
     const location = document.getElementById("browse-location");
@@ -390,7 +391,10 @@
       categoryGrid.classList.toggle("open");
       document.getElementById("category-toggle").textContent = categoryGrid.classList.contains("open") ? "Show less" : "Show more";
     });
-    document.getElementById("browse-submit").addEventListener("click", loadBusinesses);
+    filterForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      await loadBusinesses();
+    });
     [search, categorySelect, location].forEach((input) => {
       input.addEventListener("change", loadBusinesses);
     });

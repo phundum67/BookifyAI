@@ -16,6 +16,9 @@ def ensure_schema_updates():
         if "profile_image" not in user_columns:
             db.session.execute(text("ALTER TABLE users ADD COLUMN profile_image TEXT"))
             db.session.commit()
+        if "clerk_user_id" not in user_columns:
+            db.session.execute(text("ALTER TABLE users ADD COLUMN clerk_user_id VARCHAR(80)"))
+            db.session.commit()
 
     if "businesses" not in table_names:
         return

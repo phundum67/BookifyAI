@@ -46,6 +46,7 @@ export const CATEGORY_GROUPS = [
     subcategories: [
       { label: "Sound Systems", value: "Sound Systems", icon: "speaker-wireless" },
       { label: "Chair Rentals", value: "Chair Rentals", icon: "chair-rolling" },
+      { label: "Washing Service", value: "Washing Service", icon: "washing-machine" },
       { label: "Wedding Decoration Services", value: "Wedding Decoration Services", icon: "party-popper" },
       { label: "Musical Instruments", value: "Musical Instruments", icon: "music-clef-treble" },
       { label: "Bike Rentals", value: "Bike Rentals", icon: "motorbike" },
@@ -81,6 +82,9 @@ export const CATEGORY_GROUPS = [
     value: "Entertainment & Leisure",
     icon: "gamepad-variant-outline",
     subcategories: [
+      { label: "Custom Service", value: "Custom Service", icon: "shape-outline" },
+      { label: "Jamming", value: "Jamming", icon: "music-note-outline" },
+      { label: "Sound Studio", value: "Sound Studio", icon: "microphone-outline" },
       { label: "Gaming Zone", value: "Gaming Zone", icon: "gamepad-variant-outline" },
       { label: "Photography Studio", value: "Photography Studio", icon: "image-outline" },
       { label: "Pool / Snooker", value: "Pool / Snooker", icon: "billiards-rack" }
@@ -113,6 +117,7 @@ const LEGACY_CATEGORY_MAP = {
   Karaoke: { category: "Events & Venues", defaultSubcategory: "Karaoke" },
   Camping: { category: "Events & Venues", defaultSubcategory: "Camping" },
   Sound: { category: "Equipment Rental", defaultSubcategory: "Sound Systems" },
+  "Washing Service": { category: "Equipment Rental", defaultSubcategory: "Washing Service" },
   "Bike Rental": { category: "Equipment Rental", defaultSubcategory: "Bike Rentals" },
   "Car Rental": { category: "Equipment Rental", defaultSubcategory: "Car Rentals" },
   Hotel: { category: "Stay & Dining", defaultSubcategory: "Hotel" },
@@ -122,6 +127,9 @@ const LEGACY_CATEGORY_MAP = {
   Salon: { category: "Wellness & Lifestyle", defaultSubcategory: "Salon" },
   Spa: { category: "Wellness & Lifestyle", defaultSubcategory: "Spa" },
   Gym: { category: "Wellness & Lifestyle", defaultSubcategory: "Gym" },
+  "Custom Service": { category: "Entertainment & Leisure", defaultSubcategory: "Custom Service" },
+  Jamming: { category: "Entertainment & Leisure", defaultSubcategory: "Jamming" },
+  "Sound Studio": { category: "Entertainment & Leisure", defaultSubcategory: "Sound Studio" },
   "Gaming Zone": { category: "Entertainment & Leisure", defaultSubcategory: "Gaming Zone" },
   "Photography Studio": { category: "Entertainment & Leisure", defaultSubcategory: "Photography Studio" }
 };

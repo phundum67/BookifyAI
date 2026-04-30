@@ -3,7 +3,14 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from ..extensions import db
 from ..models import User
-from ..utils.auth import generate_auth_token, get_current_user, login_required, login_user, logout_user
+from ..utils.auth import (
+    CLERK_MANAGED_PASSWORD,
+    generate_auth_token,
+    get_current_user,
+    login_required,
+    login_user,
+    logout_user,
+)
 from ..utils.responses import error, success
 from ..utils.validation import validate_email
 
@@ -49,7 +56,10 @@ def login():
     password = payload.get("password") or ""
     user = User.query.filter_by(email=email).first()
 
-    if not user or not check_password_hash(user.password_hash, password):
+    if not user or not user.password_hash or user.password_hash == CLERK_MANAGED_PASSWORD:
+        return error("Invalid credentials.", ["Email or password is incorrect."], 401)
+
+    if not check_password_hash(user.password_hash, password):
         return error("Invalid credentials.", ["Email or password is incorrect."], 401)
 
     login_user(user)

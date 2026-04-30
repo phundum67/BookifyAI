@@ -8,3 +8,7 @@ frontend/dist/
 backend/frontend/node_modules/
 backend/frontend/dist/
 mobile-expo/dist-check/
+.env
+*.env
+!.env.example
+!*.env.example

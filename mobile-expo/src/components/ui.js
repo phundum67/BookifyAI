@@ -15,6 +15,7 @@ import {
   Modal,
   Platform,
   Pressable,
+  RefreshControl,
   Share,
   ScrollView,
   StyleSheet,
@@ -38,11 +39,19 @@ const BUSINESS_CATEGORY_COLORS = {
 
 const SCREEN_TOP_PADDING = 12;
 
-export function Screen({ children, bottomTabs }) {
+export function Screen({ children, bottomTabs, onRefresh, refreshing = false }) {
   return (
     <SafeAreaView edges={["top", "left", "right"]} style={styles.screen}>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.keyboardAvoiding}>
-        <ScrollView contentContainerStyle={[styles.scrollContent, bottomTabs ? styles.withTabs : null]} keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled">
+        <ScrollView
+          alwaysBounceVertical
+          bounces
+          contentContainerStyle={[styles.scrollContent, bottomTabs ? styles.withTabs : null]}
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
+          overScrollMode="always"
+          refreshControl={onRefresh ? <RefreshControl colors={[COLORS.accent]} refreshing={refreshing} tintColor={COLORS.accent} onRefresh={onRefresh} /> : undefined}
+        >
           {children}
         </ScrollView>
       </KeyboardAvoidingView>
@@ -787,15 +796,23 @@ function formatBusinessBookingAmount(symbol, value) {
   if (value === null || value === undefined || value === "") {
     return `${symbol || "₹"} 0`;
   }
-  return `${symbol || "₹"} ${Number(value).toLocaleString()}`;
+  const amount = typeof value === "number" ? value : Number.parseFloat(String(value).trim());
+  if (!Number.isFinite(amount)) {
+    return `${symbol || "₹"} 0`;
+  }
+  return `${symbol || "₹"} ${amount.toLocaleString()}`;
 }
 
 function businessBookingStatusTone(status) {
-  const normalized = String(status || "confirmed").toLowerCase();
+  const normalized = String(status || "").trim().toLowerCase();
+  if (normalized === "confirmed" || normalized === "upcoming" || normalized === "available") {
+    return { backgroundColor: "#E8F7EC", color: "#22A35A", label: normalized === "available" ? "Available" : normalized === "upcoming" ? "Upcoming" : "Confirmed" };
+  }
   if (normalized === "pending") return { backgroundColor: "#FFF4DD", color: "#E39A12", label: "Pending" };
   if (normalized === "completed") return { backgroundColor: "#EEF4FF", color: "#4B83F5", label: "Completed" };
   if (normalized === "cancelled") return { backgroundColor: "#FEECEC", color: "#E25757", label: "Cancelled" };
-  return { backgroundColor: "#E8F7EC", color: "#22A35A", label: "Confirmed" };
+  console.warn("Unknown business booking status:", status);
+  return { backgroundColor: "#F3F4F6", color: "#6B7280", label: "Unknown" };
 }
 
 export function BusinessBookingStatusBadge({ status }) {

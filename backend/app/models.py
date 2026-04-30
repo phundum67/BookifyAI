@@ -21,6 +21,7 @@ class User(TimestampMixin, db.Model):
     __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True)
+    clerk_user_id = db.Column(db.String(80), unique=True, index=True)
     name = db.Column(db.String(120), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
@@ -37,6 +38,7 @@ class User(TimestampMixin, db.Model):
     def to_dict(self):
         return {
             "id": self.id,
+            "clerk_user_id": self.clerk_user_id,
             "name": self.name,
             "email": self.email,
             "phone": self.phone,

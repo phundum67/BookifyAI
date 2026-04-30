@@ -8,7 +8,7 @@
       <span>!</span><b data-unread-badge hidden>0</b>
     </button>
   </header>
-  <section class="filter-card">
+  <form id="browse-filters" class="filter-card">
     <div class="two-col">
       <label class="sr-only" for="browse-search">Search businesses</label>
       <input id="browse-search" placeholder="Search businesses" aria-label="Search businesses">
@@ -18,12 +18,12 @@
     <div class="search-line">
       <label class="sr-only" for="browse-location">Location</label>
       <input id="browse-location" placeholder="Location" aria-label="Location">
-      <button id="browse-submit" class="btn btn-primary">Search</button>
+      <button id="browse-submit" class="btn btn-primary" type="submit">Search</button>
     </div>
     <div id="price-filters" class="scroll-chips"></div>
     <button id="category-toggle" class="btn btn-secondary wide" type="button">Show more</button>
     <div id="browse-categories" class="chip-grid collapsible"></div>
-  </section>
+  </form>
   <section class="section-block flat">
     <div class="section-title">
       <h2>Available places</h2>

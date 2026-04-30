@@ -270,6 +270,8 @@ export function BusinessProfileScreen({ activeTab, onBack, onTabChange, onError 
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const [highlightedServiceIndex, setHighlightedServiceIndex] = useState(null);
   const [serviceFeedback, setServiceFeedback] = useState("");
+  const [refreshingCategories, setRefreshingCategories] = useState(false);
+  const [categoryWarning, setCategoryWarning] = useState("");
   const locationRequestId = useRef(0);
   const servicePulse = useRef(new Animated.Value(0)).current;
   const openingParts = split12HourDisplay(openingDisplayTime);
@@ -391,6 +393,25 @@ export function BusinessProfileScreen({ activeTab, onBack, onTabChange, onError 
       category: nextPrimaryCategory,
       subcategory: nextSubcategory
     });
+    if (nextCategories.length) {
+      setCategoryWarning("");
+    }
+  }
+
+  async function refreshCategorySelection() {
+    setRefreshingCategories(true);
+    setForm((current) => ({
+      ...current,
+      categories: [],
+      category: "",
+      subcategory: "",
+      custom_category: ""
+    }));
+    setShowCategoryPicker(true);
+    setShowSubcategoryPicker(false);
+    setShowCurrencyPicker(false);
+    await new Promise((resolve) => setTimeout(resolve, 650));
+    setRefreshingCategories(false);
   }
 
   async function searchLocations(query) {
@@ -471,6 +492,13 @@ export function BusinessProfileScreen({ activeTab, onBack, onTabChange, onError 
   }
 
   async function saveBusiness() {
+    if (!(form.categories || []).length) {
+      setShowCategoryPicker(true);
+      setShowSubcategoryPicker(true);
+      setCategoryWarning("Choose at least one category. If the listed categories do not suit your business, select Custom Service.");
+      return;
+    }
+
     const safeDisplayTag = /^#[0-9]{4}$/.test(form.display_tag || "") ? form.display_tag : generateDisplayTag();
     const currency = CURRENCIES.find((item) => item.code === form.currency_code) || CURRENCIES[0];
     const submittedServices = normalizeServices(form.services).map((service) => ({
@@ -606,7 +634,7 @@ export function BusinessProfileScreen({ activeTab, onBack, onTabChange, onError 
   }
 
   return (
-    <Screen bottomTabs={<BottomTabs tabs={tabs} active={activeTab} onChange={onTabChange} />}>
+    <Screen bottomTabs={<BottomTabs tabs={tabs} active={activeTab} onChange={onTabChange} />} onRefresh={refreshCategorySelection} refreshing={refreshingCategories}>
       <Title right={onBack ? <IconButton accessibilityLabel="Back" name="arrow-back-outline" onPress={onBack} /> : null}>Business profile</Title>
       <Text style={styles.profileSubtitle}>Add your business details to get started</Text>
       <Card>
@@ -625,6 +653,12 @@ export function BusinessProfileScreen({ activeTab, onBack, onTabChange, onError 
           Category
         </SectionTitle>
         <Text style={styles.profileFieldDescription}>Choose the categories that match your business.</Text>
+        {categoryWarning ? (
+          <View style={screenStyles.categoryWarningBox}>
+            <Text style={screenStyles.categoryWarningTitle}>Choose a category first</Text>
+            <Text style={screenStyles.categoryWarningText}>{categoryWarning}</Text>
+          </View>
+        ) : null}
         {showCategoryPicker ? (
           <View style={styles.profileCategoryGrid}>
             {CATEGORY_GROUPS.map((item) => (
@@ -967,6 +1001,27 @@ export function BusinessProfileScreen({ activeTab, onBack, onTabChange, onError 
 }
 
 const screenStyles = StyleSheet.create({
+  categoryWarningBox: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E5E7EB",
+    borderRadius: 16,
+    borderWidth: 1,
+    marginTop: 10,
+    marginBottom: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12
+  },
+  categoryWarningTitle: {
+    color: "#111111",
+    fontSize: 14,
+    fontWeight: "800",
+    marginBottom: 4
+  },
+  categoryWarningText: {
+    color: "#555555",
+    fontSize: 13,
+    lineHeight: 19
+  },
   currencyButton: {
     alignItems: "center",
     backgroundColor: "#FFFFFF",

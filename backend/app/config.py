@@ -15,6 +15,11 @@ def get_cors_origins():
     return list(dict.fromkeys(origins))
 
 
+def get_clerk_authorized_parties():
+    configured = os.environ.get("CLERK_AUTHORIZED_PARTIES", "")
+    return [origin.strip() for origin in configured.split(",") if origin.strip()]
+
+
 class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key")
     SQLALCHEMY_DATABASE_URI = os.environ.get(
@@ -29,6 +34,9 @@ class Config:
     JSON_SORT_KEYS = False
     OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
     OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
+    CLERK_SECRET_KEY = os.environ.get("CLERK_SECRET_KEY", "")
+    CLERK_JWT_KEY = (os.environ.get("CLERK_JWT_KEY", "") or "").replace("\\n", "\n")
+    CLERK_AUTHORIZED_PARTIES = get_clerk_authorized_parties()
 
 
 class TestConfig(Config):

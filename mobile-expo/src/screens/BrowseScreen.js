@@ -40,36 +40,6 @@ const CATEGORY_CARD_META = {
   "Entertainment & Leisure": "#14B8A6"
 };
 
-const SUBCATEGORY_COLOR_MAP = {
-  "Football Turf": "#22C55E",
-  Badminton: "#10B981",
-  Basketball: "#F97316",
-  Volleyball: "#EAB308",
-  "Swimming Pool": "#06B6D4",
-  "Event Hall": "#8B5CF6",
-  Karaoke: "#A855F7",
-  Camping: "#84CC16",
-  "Sound Systems": "#243B63",
-  "Chair Rentals": "#64748B",
-  "Wedding Decoration Services": "#EC4899",
-  "Musical Instruments": "#7C3AED",
-  "Bike Rentals": "#0F766E",
-  "Car Rentals": "#2563EB",
-  "Lighting Equipment": "#F59E0B",
-  "Photography Equipment": "#DC2626",
-  "Catering Services": "#F97316",
-  Hotel: "#F59E0B",
-  Resort: "#14B8A6",
-  Restaurant: "#EA580C",
-  "Barber Shop": "#3B82F6",
-  Salon: "#EC4899",
-  Spa: "#8B5CF6",
-  Gym: "#EF4444",
-  "Gaming Zone": "#14B8A6",
-  "Photography Studio": "#6366F1",
-  "Pool / Snooker": "#0EA5E9"
-};
-
 export function BrowseScreen({ activeTab, initialCategory = "", initialSubcategory = "", onTabChange, onOpenBusiness, onError }) {
   const [search, setSearch] = useState("");
   const [location, setLocation] = useState("");
@@ -355,8 +325,7 @@ export function BrowseScreen({ activeTab, initialCategory = "", initialSubcatego
                                 active={subcategory === item.value}
                                 compact
                                 icon={SUBCATEGORY_ICON_MAP[item.value] || "shape-outline"}
-                                iconColor="#FFFFFF"
-                                iconWrapStyle={{ backgroundColor: SUBCATEGORY_COLOR_MAP[item.value] || CATEGORY_CARD_META[category] || COLORS.accentSoft }}
+                                iconWrapStyle={{ backgroundColor: COLORS.accentSoft }}
                                 label={item.label}
                                 onPress={() => setSubcategory(item.value)}
                                 style={screenStyles.gridPill}

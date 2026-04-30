@@ -9,6 +9,7 @@ CATEGORY_SUBCATEGORY_MAP = {
     "Equipment Rental": [
         "Sound Systems",
         "Chair Rentals",
+        "Washing Service",
         "Wedding Decoration Services",
         "Musical Instruments",
         "Bike Rentals",
@@ -18,7 +19,7 @@ CATEGORY_SUBCATEGORY_MAP = {
     ],
     "Stay & Dining": ["Catering Services", "Hotel", "Resort", "Restaurant"],
     "Wellness & Lifestyle": ["Barber Shop", "Salon", "Spa", "Gym"],
-    "Entertainment & Leisure": ["Gaming Zone", "Photography Studio", "Pool / Snooker"],
+    "Entertainment & Leisure": ["Custom Service", "Jamming", "Sound Studio", "Gaming Zone", "Photography Studio", "Pool / Snooker"],
 }
 CATEGORIES = list(CATEGORY_SUBCATEGORY_MAP.keys())
 SPORTS_SUBCATEGORIES = CATEGORY_SUBCATEGORY_MAP["Sports & Turfs"]

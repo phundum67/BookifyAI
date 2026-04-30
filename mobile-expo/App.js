@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from "react";
+import { ClerkProvider, useAuth, useClerk } from "@clerk/expo";
+import { tokenCache } from "@clerk/expo/token-cache";
+import React, { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
-import { api, clearAuthToken, loadAuthToken } from "./src/api/client";
+import { api, setAccessTokenProvider } from "./src/api/client";
 import { COLORS } from "./src/constants";
 import { AuthScreen } from "./src/screens/AuthScreen";
 import { BrowseScreen } from "./src/screens/BrowseScreen";
@@ -18,7 +20,39 @@ import { CustomerHomeScreen } from "./src/screens/CustomerHomeScreen";
 import { CustomerSettingsScreen } from "./src/screens/CustomerSettingsScreen";
 import { RoleScreen } from "./src/screens/RoleScreen";
 
-export default function App() {
+const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY || "";
+
+function UnknownAccountTypeScreen({ accountType }) {
+  return (
+    <SafeAreaView style={styles.center}>
+      <View style={styles.unknownAccountCard}>
+        <Text style={styles.unknownAccountTitle}>Account setup needed</Text>
+        <Text style={styles.unknownAccountText}>
+          We could not load this account because the account type is not supported yet.
+        </Text>
+        <Text style={styles.unknownAccountMeta}>Received: {accountType || "Unknown"}</Text>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+function MissingClerkConfigurationScreen() {
+  return (
+    <SafeAreaView style={styles.center}>
+      <View style={styles.unknownAccountCard}>
+        <Text style={styles.unknownAccountTitle}>Clerk setup needed</Text>
+        <Text style={styles.unknownAccountText}>
+          Add your Clerk publishable key to `mobile-expo/.env` as `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`
+          and restart Expo.
+        </Text>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+function AppShell() {
+  const { getToken, isLoaded, isSignedIn } = useAuth();
+  const { signOut } = useClerk();
   const [booting, setBooting] = useState(true);
   const [user, setUser] = useState(null);
   const [authMode, setAuthMode] = useState("login");
@@ -31,38 +65,88 @@ export default function App() {
   const [notice, setNotice] = useState(null);
 
   useEffect(() => {
-    bootstrap();
-  }, []);
+    setAccessTokenProvider(async () => {
+      if (!isLoaded || !isSignedIn) return null;
+      return getToken();
+    });
 
-  async function bootstrap() {
-    try {
-      await loadAuthToken();
-      const payload = await api("/auth/me");
-      setUser(payload.data.user);
-    } catch (_error) {
-      setUser(null);
-    } finally {
-      setBooting(false);
+    return () => {
+      setAccessTokenProvider(null);
+    };
+  }, [getToken, isLoaded, isSignedIn]);
+
+  function resetSessionUiState({ authModeValue } = {}) {
+    setCustomerTab("home");
+    setBusinessTab("dashboard");
+    setBusinessProfileOpen(false);
+    setSelectedBusinessId(null);
+    setRecentlyViewed([]);
+    setBrowseFilters({ category: "", subcategory: "" });
+    setNotice(null);
+    if (authModeValue) {
+      setAuthMode(authModeValue);
     }
   }
 
-  async function logout() {
-    try {
-      await api("/auth/logout", { method: "POST", body: {} });
-    } catch (_error) {
-      // Token may already be invalid. Clearing local state is still correct.
+  const syncCurrentUser = useCallback(async ({ showError = true } = {}) => {
+    if (!isLoaded || !isSignedIn) {
+      setUser(null);
+      return null;
     }
-    await clearAuthToken();
+
+    try {
+      const payload = await api("/auth/me");
+      const nextUser = payload.data.user || null;
+      setUser(nextUser);
+      return nextUser;
+    } catch (error) {
+      setUser(null);
+      if (showError) {
+        handleApiError(error);
+      }
+      return null;
+    }
+  }, [isLoaded, isSignedIn]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function bootstrap() {
+      if (!isLoaded) return;
+
+      if (!isSignedIn) {
+        setUser(null);
+        resetSessionUiState({ authModeValue: "login" });
+        setBooting(false);
+        return;
+      }
+
+      setBooting(true);
+      const nextUser = await syncCurrentUser({ showError: false });
+      if (!cancelled && !nextUser) {
+        setNotice(normalizeNotice("We could not finish syncing your account with the backend."));
+      }
+      if (!cancelled) {
+        setBooting(false);
+      }
+    }
+
+    bootstrap();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoaded, isSignedIn, syncCurrentUser]);
+
+  async function logout() {
+    await signOut();
     setUser(null);
-    setSelectedBusinessId(null);
-    setBusinessProfileOpen(false);
-    setAuthMode("login");
+    resetSessionUiState({ authModeValue: "login" });
   }
 
   function handleAuth(nextUser) {
     setUser(nextUser);
-    setSelectedBusinessId(null);
-    setBusinessProfileOpen(false);
+    resetSessionUiState();
   }
 
   function openCustomerBusiness(id, business) {
@@ -277,8 +361,14 @@ export default function App() {
         <ActivityIndicator color={COLORS.accent} />
       </SafeAreaView>
     );
+  } else if (!isSignedIn) {
+    content = <AuthScreen mode={authMode} onModeChange={setAuthMode} onSignedIn={syncCurrentUser} onError={handleApiError} />;
   } else if (!user) {
-    content = <AuthScreen mode={authMode} onModeChange={setAuthMode} onAuth={handleAuth} onError={handleApiError} />;
+    content = (
+      <SafeAreaView style={styles.center}>
+        <ActivityIndicator color={COLORS.accent} />
+      </SafeAreaView>
+    );
   } else if (!user.account_type) {
     content = <RoleScreen onAuth={handleAuth} onError={handleApiError} />;
   } else if (user.account_type === "Customer") {
@@ -310,26 +400,45 @@ export default function App() {
     } else if (customerTab === "bookings") {
       content = <CustomerBookingsScreen activeTab={customerTab} onTabChange={setCustomerTab} onError={handleApiError} />;
     } else if (customerTab === "settings") {
-      content = <CustomerSettingsScreen user={user} activeTab={customerTab} onTabChange={setCustomerTab} onAuth={setUser} onLogout={logout} onOpenBusiness={openCustomerBusiness} onError={handleApiError} />;
+      content = <CustomerSettingsScreen user={user} activeTab={customerTab} onTabChange={setCustomerTab} onAuth={handleAuth} onLogout={logout} onOpenBusiness={openCustomerBusiness} onError={handleApiError} />;
     } else {
       content = <CustomerHomeScreen user={user} activeTab={customerTab} onTabChange={setCustomerTab} onOpenBusiness={openCustomerBusiness} onError={handleApiError} recentlyViewed={recentlyViewed} />;
     }
-  } else if (businessProfileOpen) {
-    content = <BusinessProfileScreen activeTab="settings" onBack={closeBusinessProfile} onTabChange={setBusinessTab} onError={handleApiError} />;
-  } else if (businessTab === "slots") {
-    content = <BusinessSlotsScreen activeTab={businessTab} onOpenProfile={openBusinessProfile} onTabChange={setBusinessTab} onError={handleApiError} />;
-  } else if (businessTab === "bookings") {
-    content = <BusinessBookingsScreen activeTab={businessTab} onTabChange={setBusinessTab} onError={handleApiError} />;
-  } else if (businessTab === "settings") {
-    content = <BusinessSettingsScreen user={user} activeTab={businessTab} onOpenProfile={openBusinessProfile} onTabChange={setBusinessTab} onLogout={logout} />;
+  } else if (user.account_type === "Business") {
+    if (businessProfileOpen) {
+      content = <BusinessProfileScreen activeTab="settings" onBack={closeBusinessProfile} onTabChange={setBusinessTab} onError={handleApiError} />;
+    } else if (businessTab === "slots") {
+      content = <BusinessSlotsScreen activeTab={businessTab} onOpenProfile={openBusinessProfile} onTabChange={setBusinessTab} onError={handleApiError} />;
+    } else if (businessTab === "bookings") {
+      content = <BusinessBookingsScreen activeTab={businessTab} onTabChange={setBusinessTab} onError={handleApiError} />;
+    } else if (businessTab === "settings") {
+      content = <BusinessSettingsScreen user={user} activeTab={businessTab} onOpenProfile={openBusinessProfile} onTabChange={setBusinessTab} onLogout={logout} />;
+    } else {
+      content = <BusinessDashboardScreen activeTab={businessTab} onOpenProfile={openBusinessProfile} onTabChange={setBusinessTab} onError={handleApiError} />;
+    }
   } else {
-    content = <BusinessDashboardScreen activeTab={businessTab} onOpenProfile={openBusinessProfile} onTabChange={setBusinessTab} onError={handleApiError} />;
+    console.warn("Unexpected account type received in App:", user.account_type);
+    content = <UnknownAccountTypeScreen accountType={user.account_type} />;
   }
 
   return (
-    <SafeAreaProvider>
+    <>
       {content}
       {renderNoticeModal()}
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <SafeAreaProvider>
+      {publishableKey ? (
+        <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+          <AppShell />
+        </ClerkProvider>
+      ) : (
+        <MissingClerkConfigurationScreen />
+      )}
     </SafeAreaProvider>
   );
 }
@@ -340,6 +449,35 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
     flex: 1,
     justifyContent: "center"
+  },
+  unknownAccountCard: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#E5E7EB",
+    borderRadius: 24,
+    borderWidth: 1,
+    maxWidth: 360,
+    paddingHorizontal: 24,
+    paddingVertical: 28,
+    width: "100%"
+  },
+  unknownAccountTitle: {
+    color: COLORS.textPrimary,
+    fontSize: 24,
+    fontWeight: "800",
+    marginBottom: 12,
+    textAlign: "center"
+  },
+  unknownAccountText: {
+    color: COLORS.textSecondary,
+    fontSize: 15,
+    lineHeight: 22,
+    textAlign: "center"
+  },
+  unknownAccountMeta: {
+    color: COLORS.mutedText,
+    fontSize: 13,
+    marginTop: 16,
+    textAlign: "center"
   },
   noticeBackdrop: {
     alignItems: "center",

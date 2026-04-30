@@ -5,6 +5,11 @@ import { supabaseApi } from "../supabase/bookifyApi";
 
 const TOKEN_KEY = "bookify_auth_token";
 let authToken = null;
+let accessTokenProvider = null;
+
+export function setAccessTokenProvider(provider) {
+  accessTokenProvider = typeof provider === "function" ? provider : null;
+}
 
 export async function loadAuthToken() {
   authToken = await SecureStore.getItemAsync(TOKEN_KEY);
@@ -30,10 +35,11 @@ export async function api(path, options = {}) {
     return supabaseApi(path, options);
   }
 
+  const bearerToken = accessTokenProvider ? await accessTokenProvider() : authToken;
   const headers = {
     Accept: "application/json",
     ...(options.body ? { "Content-Type": "application/json" } : {}),
-    ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+    ...(bearerToken ? { Authorization: `Bearer ${bearerToken}` } : {}),
     ...(options.headers || {})
   };
 
@@ -66,7 +72,7 @@ export async function api(path, options = {}) {
     throw error;
   }
 
-  if (payload.data && payload.data.token) {
+  if (!accessTokenProvider && payload.data && payload.data.token) {
     await setAuthToken(payload.data.token);
   }
 
