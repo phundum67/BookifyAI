@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<main class="page with-bottom-nav">
+  <header class="page-header">
+    <h1>Slot management</h1>
+  </header>
+  <section class="card">
+    <p class="eyebrow">Choose date</p>
+    <div class="search-line">
+      <input id="slot-date" type="date">
+      <button id="generate-day-slots" class="btn btn-primary">Prepare day</button>
+    </div>
+    <p class="muted">Slots are created from your business opening hours. Tap a slot to block or unblock it.</p>
+  </section>
+  <section class="card">
+    <div class="section-title">
+      <h2>Slots</h2>
+      <button id="close-day" class="btn btn-secondary btn-small" type="button">Close entire day</button>
+    </div>
+    <div class="slot-legend">
+      <span><i class="available"></i>Available</span>
+      <span><i class="booked"></i>Booked</span>
+      <span><i class="blocked"></i>Blocked</span>
+    </div>
+    <div id="business-slot-grid" class="slot-grid"></div>
+    <p id="slot-message" class="empty-state small" hidden></p>
+  </section>
+</main>
+{% endblock %}
+
+{% block bottom_nav %}
+<nav class="bottom-nav">
+  <a href="{{ url_for('pages.business_dashboard') }}">Dashboard</a>
+  <a href="{{ url_for('pages.business_profile') }}">Profile</a>
+  <a class="active" href="{{ url_for('pages.business_slots') }}">Slots</a>
+  <a href="{{ url_for('pages.business_settings') }}">Settings</a>
+</nav>
+{% endblock %}

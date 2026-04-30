@@ -8,6 +8,13 @@ from app.models import Booking, Business, Favorite, Notification, Review, Slot, 
 from app.services.slot_service import generate_slots
 
 
+PUBLIC_BASE_URL = "https://phundum67.pythonanywhere.com"
+
+
+def static_image(path):
+    return f"{PUBLIC_BASE_URL}/static/images/{path}"
+
+
 def reset_and_seed():
     app = create_app()
 
@@ -64,9 +71,9 @@ def reset_and_seed():
             opening_time="06:00",
             closing_time="22:00",
             closed_days_json="[]",
-            image_url="/images/green-hills-turf.jpg",
-            profile_image="/images/green-hills-turf.jpg",
-            gallery_images_json='["/images/green-hills-turf.jpg"]',
+            image_url=static_image("green-hills-turf.jpg"),
+            profile_image=static_image("green-hills-turf.jpg"),
+            gallery_images_json=f'["{static_image("green-hills-turf.jpg")}"]',
             is_booking_active=True,
             is_featured=True,
         )
@@ -87,9 +94,9 @@ def reset_and_seed():
             opening_time="11:00",
             closing_time="23:00",
             closed_days_json="[]",
-            image_url="/images/karaoke-room.jpg",
-            profile_image="/images/karaoke-room.jpg",
-            gallery_images_json='["/images/karaoke-room.jpg"]',
+            image_url=static_image("lamka-karaoke-hub.jpg"),
+            profile_image=static_image("lamka-karaoke-hub.jpg"),
+            gallery_images_json=f'["{static_image("lamka-karaoke-hub.jpg")}"]',
             is_booking_active=True,
             is_featured=True,
         )
@@ -110,9 +117,9 @@ def reset_and_seed():
             opening_time="08:00",
             closing_time="20:00",
             closed_days_json="[]",
-            image_url="/images/blue-pool-resort.jpeg",
-            profile_image="/images/blue-pool-resort.jpeg",
-            gallery_images_json='["/images/blue-pool-resort.jpeg"]',
+            image_url=static_image("blue-pool-resort.jpeg"),
+            profile_image=static_image("blue-pool-resort.jpeg"),
+            gallery_images_json=f'["{static_image("blue-pool-resort.jpeg")}"]',
             is_booking_active=True,
             is_featured=False,
         )

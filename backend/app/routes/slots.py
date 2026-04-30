@@ -2,7 +2,7 @@ from flask import Blueprint, request
 
 from ..extensions import db
 from ..models import Business, Slot
-from ..services.slot_service import block_slots_for_dates, generate_slots, get_slots_for_business
+from ..services.slot_service import block_slots_for_dates, build_slot_payloads, generate_slots, slot_has_active_booking
 from ..utils.auth import get_current_user, role_required
 from ..utils.responses import error, success
 from ..utils.validation import WEEKDAY_MAP, parse_date
@@ -59,14 +59,17 @@ def list_slots(business_id):
         and current_user.account_type == "Business"
         and business.owner_user_id == current_user.id
     )
-    slots = get_slots_for_business(business_id, slot_date)
-    if not include_all:
-        slots = [slot for slot in slots if slot.status == "available"]
+    raw_service_id = request.args.get("service_id")
+    try:
+        service_id = int(raw_service_id) if raw_service_id not in (None, "") else None
+    except ValueError:
+        return error("Invalid service.", ["service_id must be a number."], 400)
+    slots = build_slot_payloads(business_id, slot_date, service_id=service_id, include_all=include_all)
 
     message = "Slots fetched successfully."
     if slot_date and not slots:
         message = "No slots available for this date. Please choose another date."
-    return success(message, {"slots": [slot.to_dict() for slot in slots]})
+    return success(message, {"slots": slots})
 
 
 @slots_bp.patch("/slots/<int:slot_id>")
@@ -82,7 +85,7 @@ def update_slot(slot_id):
         return error("Slot not found.", ["You can only edit your own slots."], 404)
 
     payload = request.get_json() or {}
-    if slot.status == "booked":
+    if slot_has_active_booking(slot):
         return error("Booked slots cannot be changed.", ["Cancel the booking first if needed."], 400)
 
     status = payload.get("status")

@@ -1,26 +1,27 @@
 from datetime import datetime
+import json
 import re
 
 
-CATEGORIES = [
-    "Barber Shop",
-    "Bike Rental",
-    "Camping",
-    "Car Rental",
-    "Event Hall",
-    "Gaming Zone",
-    "Gym",
-    "Hotel",
-    "Karaoke",
-    "Photography Studio",
-    "Pool",
-    "Resort",
-    "Restaurant",
-    "Salon",
-    "Spa",
-    "Sports & Turf",
-]
-SPORTS_SUBCATEGORIES = ["Badminton", "Basketball", "Volleyball", "Turf"]
+CATEGORY_SUBCATEGORY_MAP = {
+    "Sports & Turfs": ["Football Turf", "Badminton", "Basketball", "Volleyball", "Swimming Pool"],
+    "Events & Venues": ["Event Hall", "Karaoke", "Camping"],
+    "Equipment Rental": [
+        "Sound Systems",
+        "Chair Rentals",
+        "Wedding Decoration Services",
+        "Musical Instruments",
+        "Bike Rentals",
+        "Car Rentals",
+        "Lighting Equipment",
+        "Photography Equipment",
+    ],
+    "Stay & Dining": ["Catering Services", "Hotel", "Resort", "Restaurant"],
+    "Wellness & Lifestyle": ["Barber Shop", "Salon", "Spa", "Gym"],
+    "Entertainment & Leisure": ["Gaming Zone", "Photography Studio", "Pool / Snooker"],
+}
+CATEGORIES = list(CATEGORY_SUBCATEGORY_MAP.keys())
+SPORTS_SUBCATEGORIES = CATEGORY_SUBCATEGORY_MAP["Sports & Turfs"]
 CURRENCY_OPTIONS = {
     "INR": "₹",
     "USD": "$",
@@ -54,7 +55,26 @@ def validate_email(value):
 
 def validate_business_payload(payload):
     errors = []
+    raw_categories = payload.get("categories")
+    if isinstance(raw_categories, str):
+        try:
+            raw_categories = json.loads(raw_categories)
+        except json.JSONDecodeError:
+            raw_categories = [raw_categories] if raw_categories.strip() else []
+    if not isinstance(raw_categories, list):
+        raw_categories = []
+
+    categories = []
+    for item in raw_categories:
+        if isinstance(item, str):
+            value = item.strip()
+            if value and value not in categories:
+                categories.append(value)
+
     category = payload.get("category")
+    if not categories and isinstance(category, str) and category.strip():
+        categories.append(category.strip())
+
     subcategory = payload.get("subcategory")
     custom_category = payload.get("custom_category")
     display_tag = payload.get("display_tag")
@@ -66,24 +86,21 @@ def validate_business_payload(payload):
     max_booking_hours = payload.get("max_booking_hours")
     buffer_minutes = int(payload.get("buffer_time_between_slots", 0) or 0)
 
-    for field in ["name", "display_tag", "category", "location", "phone", "description", "opening_time", "closing_time"]:
+    for field in ["name", "display_tag", "location", "phone", "description", "opening_time", "closing_time"]:
         if not payload.get(field):
             errors.append(f"{field} is required.")
 
-    if category and category not in CATEGORIES:
+    if not categories:
+        errors.append("category is required.")
+    elif any(item not in CATEGORIES for item in categories):
         errors.append("Please choose a valid category.")
-
     if display_tag and not re.fullmatch(r"#\d{4}", display_tag):
         errors.append("display_tag must use the format #1234.")
 
-    if category == "Sports & Turf" and subcategory and subcategory not in SPORTS_SUBCATEGORIES:
-        errors.append("Please choose a valid Sports & Turf subcategory.")
-
-    if category != "Sports & Turf" and subcategory:
-        errors.append("Subcategory is only supported for Sports & Turf.")
-
     if custom_category and len(custom_category) > 80:
         errors.append("Custom category is too long.")
+    if subcategory and len(str(subcategory)) > 80:
+        errors.append("Subcategory is too long.")
 
     if opening_time and closing_time:
         try:
@@ -115,5 +132,21 @@ def validate_business_payload(payload):
 
     if buffer_minutes < 0:
         errors.append("buffer_time_between_slots must be 0 or greater.")
+
+    services = payload.get("services") or []
+    if isinstance(services, str):
+        services = []
+    for index, service in enumerate(services, start=1):
+        if not isinstance(service, dict):
+            continue
+        booking_type = (service.get("booking_type") or "hourly").strip().lower()
+        if booking_type not in {"hourly", "daily"}:
+            errors.append(f"service {index} booking_type must be hourly or daily.")
+        if service.get("price") not in (None, ""):
+            try:
+                if float(service.get("price")) < 0:
+                    errors.append(f"service {index} price must be 0 or greater.")
+            except (TypeError, ValueError):
+                errors.append(f"service {index} price must be numeric.")
 
     return errors

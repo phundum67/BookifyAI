@@ -1,6 +1,20 @@
 import os
 
 
+FRONTEND_ORIGINS = [
+    "http://localhost:5173",
+    "https://bookify-ai-nine.vercel.app",
+]
+FRONTEND_ORIGIN = FRONTEND_ORIGINS[0]
+
+
+def get_cors_origins():
+    configured_origins = os.environ.get("CORS_ORIGINS") or os.environ.get("CORS_ORIGIN", "")
+    origins = [*FRONTEND_ORIGINS]
+    origins.extend(origin.strip() for origin in configured_origins.split(",") if origin.strip())
+    return list(dict.fromkeys(origins))
+
+
 class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key")
     SQLALCHEMY_DATABASE_URI = os.environ.get(
@@ -9,9 +23,12 @@ class Config:
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SAMESITE = "Lax"
-    CORS_ORIGINS = os.environ.get("CORS_ORIGIN", "http://localhost:5173")
+    SESSION_COOKIE_SAMESITE = "None"
+    SESSION_COOKIE_SECURE = True
+    CORS_ORIGINS = get_cors_origins()
     JSON_SORT_KEYS = False
+    OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+    OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
 
 
 class TestConfig(Config):

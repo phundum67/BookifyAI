@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+<main class="page auth-page">
+  <a class="back-square" href="{{ url_for('pages.landing') }}" aria-label="Back">&lt;</a>
+  <section class="card auth-card">
+    <p class="eyebrow">{{ "Welcome back" if auth_mode == "login" else "Start booking smarter" }}</p>
+    <h1>{{ "Login" if auth_mode == "login" else "Create your account" }}</h1>
+    <form id="auth-form" data-mode="{{ auth_mode }}" class="form-stack">
+      {% if auth_mode == "signup" %}
+      <label>Name<input name="name" autocomplete="name" required placeholder="Your name"></label>
+      <label>Phone<input name="phone" autocomplete="tel" placeholder="Phone number"></label>
+      {% endif %}
+      <label>Email<input name="email" type="email" autocomplete="email" required placeholder="you@example.com"></label>
+      <label>Password<input name="password" type="password" autocomplete="{{ 'current-password' if auth_mode == 'login' else 'new-password' }}" required placeholder="At least 6 characters"></label>
+      <button class="btn btn-primary" type="submit">{{ "Login" if auth_mode == "login" else "Sign up" }}</button>
+      <button class="btn btn-secondary" type="button">Continue with Google</button>
+      <p id="auth-error" class="form-error" hidden></p>
+    </form>
+    {% if auth_mode == "login" %}
+    <p class="center-text muted">New here? <a href="{{ url_for('pages.signup') }}">Create an account</a></p>
+    {% else %}
+    <p class="center-text muted">Already have an account? <a href="{{ url_for('pages.login') }}">Login</a></p>
+    {% endif %}
+  </section>
+</main>
+{% endblock %}

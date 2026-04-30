@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+<main class="page with-bottom-nav">
+  <header class="app-header">
+    <div>
+      <p class="eyebrow">Smart Booking</p>
+      <h1>Hello, {{ user.name }}</h1>
+    </div>
+    <button class="icon-button" data-notification-button aria-label="Notifications">
+      <span>!</span><b data-unread-badge hidden>0</b>
+    </button>
+  </header>
+  <section class="hero-card compact-hero">
+    <p class="eyebrow">Fast local bookings</p>
+    <h2>Book nearby businesses in a few taps.</h2>
+    <a class="btn btn-primary btn-small" href="{{ url_for('pages.browse') }}">Browse now</a>
+  </section>
+  <section class="section-block">
+    <div class="section-title">
+      <h2>Categories</h2>
+      <a href="{{ url_for('pages.browse') }}">Browse categories</a>
+    </div>
+    <div id="home-categories" class="chip-grid compact"></div>
+  </section>
+  <section class="section-block">
+    <div class="section-title">
+      <h2>Featured</h2>
+      <a href="{{ url_for('pages.browse') }}">See all</a>
+    </div>
+    <div id="featured-businesses" class="business-grid"></div>
+  </section>
+  <section class="section-block">
+    <h2>Recently viewed</h2>
+    <div class="empty-state small">Your recent places will appear here after you view businesses.</div>
+  </section>
+  <section class="assistant-card">
+    <p class="eyebrow">Assistant</p>
+    <h2>What are you looking for?</h2>
+    <p>Try: "Book a turf near me 4-5" or "Find karaoke rooms nearby".</p>
+  </section>
+</main>
+{% endblock %}
+
+{% block bottom_nav %}
+<nav class="bottom-nav">
+  <a class="active" href="{{ url_for('pages.customer_home') }}">Home</a>
+  <a href="{{ url_for('pages.browse') }}">Browse</a>
+  <a href="{{ url_for('pages.customer_bookings') }}">Bookings</a>
+  <a href="{{ url_for('pages.customer_settings') }}">Settings</a>
+</nav>
+{% endblock %}

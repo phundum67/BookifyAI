@@ -25,13 +25,11 @@ def get_business_dashboard(business):
     recent_bookings = sorted(bookings, key=lambda booking: booking.created_at, reverse=True)
     next_upcoming = upcoming[0].to_dict() if upcoming else None
     rating_values = [review.rating for review in reviews]
-    estimated_earnings = 0
-    if business.price_per_hour:
-        estimated_earnings = sum(
-            booking.duration_hours * business.price_per_hour
-            for booking in bookings
-            if booking.status in {"confirmed", "completed"}
-        )
+    estimated_earnings = sum(
+        booking.total_price or 0
+        for booking in bookings
+        if booking.status in {"confirmed", "completed"}
+    )
 
     return {
         "next_upcoming_booking": next_upcoming,

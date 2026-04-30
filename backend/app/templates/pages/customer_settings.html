@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<main class="page with-bottom-nav">
+  <header class="page-header">
+    <h1>Settings</h1>
+  </header>
+  <section class="card">
+    <h2>Edit profile</h2>
+    <form id="profile-form" class="form-stack">
+      <label>Name<input name="name" value="{{ user.name }}" required></label>
+      <label>Email<input name="email" type="email" value="{{ user.email }}" required></label>
+      <label>Phone<input name="phone" value="{{ user.phone or '' }}"></label>
+      <button class="btn btn-primary" type="submit">Save profile</button>
+      <p id="profile-error" class="form-error" hidden></p>
+    </form>
+  </section>
+  <section class="settings-group">
+    <h2>Saved businesses</h2>
+    <div id="saved-businesses" class="business-grid list-mobile"></div>
+  </section>
+  <section class="settings-group">
+    <button class="settings-row" type="button">Booking history<span>View your visits</span></button>
+    <button class="settings-row" type="button">Payments<span>This feature will be available soon</span></button>
+    <button class="settings-row" type="button">Policies<span>Booking and cancellation information</span></button>
+    <button class="settings-row" type="button">About Us<span>Local booking made simple</span></button>
+    <button id="logout-button" class="settings-row danger" type="button">Logout<span>Sign out of this device</span></button>
+  </section>
+</main>
+{% endblock %}
+
+{% block bottom_nav %}
+<nav class="bottom-nav">
+  <a href="{{ url_for('pages.customer_home') }}">Home</a>
+  <a href="{{ url_for('pages.browse') }}">Browse</a>
+  <a href="{{ url_for('pages.customer_bookings') }}">Bookings</a>
+  <a class="active" href="{{ url_for('pages.customer_settings') }}">Settings</a>
+</nav>
+{% endblock %}

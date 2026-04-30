@@ -1,8 +1,11 @@
 from datetime import datetime, timedelta
 
 from ..extensions import db
-from ..models import Slot
+from ..models import Booking, Slot
 from ..utils.validation import parse_date, parse_time
+
+
+ACTIVE_BOOKING_STATUSES = {"confirmed", "pending"}
 
 
 def combine_slot_parts(slot_date, time_str):
@@ -66,13 +69,98 @@ def get_slots_for_business(business_id, slot_date=None):
     return query.order_by(Slot.slot_date.asc(), Slot.start_time.asc()).all()
 
 
+def slot_matches_booking(slot, booking):
+    if slot.slot_date != booking.slot_date:
+        return False
+
+    slot_start = combine_slot_parts(slot.slot_date, slot.start_time)
+    slot_end = combine_slot_parts(slot.slot_date, slot.end_time)
+    booking_start = combine_slot_parts(booking.slot_date, booking.start_time)
+    booking_end = combine_slot_parts(booking.slot_date, booking.end_time)
+    return slot_start < booking_end and slot_end > booking_start
+
+
+def slot_booking_applies_to_service(booking, service_id=None, aggregate=False):
+    if aggregate:
+        return True
+    if service_id in (None, ""):
+        return booking.service_id is None
+    return booking.service_id in {None, service_id}
+
+
+def get_hourly_bookings_for_slots(business_id, slot_date=None):
+    query = (
+        Booking.query.filter_by(business_id=business_id, booking_type="hourly")
+        .filter(Booking.status.in_(ACTIVE_BOOKING_STATUSES))
+        .order_by(Booking.start_time.asc())
+    )
+    if slot_date:
+        query = query.filter_by(slot_date=parse_date(slot_date) if isinstance(slot_date, str) else slot_date)
+    return query.all()
+
+
+def slot_has_active_booking(slot, service_id=None, aggregate=True):
+    bookings = get_hourly_bookings_for_slots(slot.business_id, slot.slot_date)
+    return any(
+        slot_matches_booking(slot, booking) and slot_booking_applies_to_service(booking, service_id=service_id, aggregate=aggregate)
+        for booking in bookings
+    )
+
+
+def build_slot_payloads(business_id, slot_date=None, service_id=None, include_all=False):
+    slots = get_slots_for_business(business_id, slot_date)
+    bookings = get_hourly_bookings_for_slots(business_id, slot_date)
+    aggregate = include_all and service_id in (None, "")
+    payloads = []
+
+    for slot in slots:
+        slot_payload = slot.to_dict()
+        slot_payload["status"] = "blocked" if slot.status == "blocked" else "available"
+
+        linked_booking = slot.booking
+        active_booking = None
+        if (
+            linked_booking
+            and linked_booking.status in ACTIVE_BOOKING_STATUSES
+            and slot_booking_applies_to_service(linked_booking, service_id=service_id, aggregate=aggregate)
+        ):
+            active_booking = linked_booking
+        else:
+            active_booking = next(
+                (
+                    booking
+                    for booking in bookings
+                    if slot_matches_booking(slot, booking)
+                    and slot_booking_applies_to_service(booking, service_id=service_id, aggregate=aggregate)
+                ),
+                None,
+            )
+
+        if active_booking and slot_payload["status"] != "blocked":
+            slot_payload["status"] = "booked"
+            slot_payload["booking_id"] = active_booking.id
+            slot_payload["service_id"] = active_booking.service_id
+            slot_payload["service_name"] = active_booking.service.name if active_booking.service else None
+            slot_payload["customer_name"] = active_booking.customer_name
+        else:
+            slot_payload["booking_id"] = None
+            slot_payload["service_id"] = None
+            slot_payload["service_name"] = None
+            slot_payload["customer_name"] = None
+
+        if include_all or slot_payload["status"] == "available":
+            payloads.append(slot_payload)
+
+    return payloads
+
+
 def block_slots_for_dates(business, dates):
     updated = 0
     for value in dates:
         target_date = parse_date(value)
         slots = Slot.query.filter_by(business_id=business.id, slot_date=target_date).all()
         for slot in slots:
-            if slot.status != "booked":
+            if not slot_has_active_booking(slot):
                 slot.status = "blocked"
                 slot.block_reason = "Temporary closure"
                 updated += 1

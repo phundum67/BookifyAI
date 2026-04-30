@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+<main class="page role-page">
+  <a class="back-square" href="{{ url_for('pages.landing') }}" aria-label="Back">&lt;</a>
+  <section class="card auth-card">
+    <p class="eyebrow">Choose your path</p>
+    <h1>How do you want to continue?</h1>
+    <div class="role-grid">
+      <button class="role-card" data-role-choice="Customer">
+        <strong>Continue as Customer</strong>
+        <span>Browse businesses, save favorites, and book available slots.</span>
+      </button>
+      <button class="role-card" data-role-choice="Business">
+        <strong>Continue as Business</strong>
+        <span>Create your business profile, manage slots, and track bookings.</span>
+      </button>
+    </div>
+    <p id="role-error" class="form-error" hidden></p>
+  </section>
+</main>
+{% endblock %}

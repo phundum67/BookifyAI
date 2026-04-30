@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+<main class="page with-bottom-nav">
+  <header class="page-header">
+    <h1>Business profile</h1>
+  </header>
+  <form id="business-profile-form" class="card form-stack">
+    <label>Business name<input name="name" required placeholder="Green Hills Turf"></label>
+    <label>Display tag<input name="display_tag" required placeholder="Example: #1234, #2323" maxlength="5"></label>
+    <p id="display-tag-error" class="form-error" hidden></p>
+    <div class="two-col">
+      <label>Category<select name="category" id="business-category" required></select></label>
+      <label id="subcategory-field" hidden>Subcategory<select name="subcategory" id="business-subcategory"></select></label>
+    </div>
+    <label>Custom category<input name="custom_category" placeholder="Optional"></label>
+    <label>Location<input name="location" required placeholder="Downtown"></label>
+    <label>Phone<input name="phone" required placeholder="Phone number"></label>
+    <label>Description<textarea name="description" rows="4" required placeholder="Tell customers what you offer"></textarea></label>
+    <div class="two-col">
+      <label>Price per hour<input name="price_per_hour" type="number" min="0" step="1" placeholder="1200"></label>
+      <label>Currency<select name="currency_code" id="currency-code" required></select></label>
+    </div>
+    <div class="two-col">
+      <label>Opening time<select name="opening_time" id="opening-time" required></select></label>
+      <label>Closing time<select name="closing_time" id="closing-time" required></select></label>
+    </div>
+    <div class="two-col">
+      <label>Min booking hours<input name="min_booking_hours" type="number" min="1" value="1"></label>
+      <label>Max booking hours<input name="max_booking_hours" type="number" min="1" placeholder="Optional"></label>
+    </div>
+    <label>Buffer minutes between slots<input name="buffer_time_between_slots" type="number" min="0" value="0"></label>
+    <label>Closed days<input name="closed_days" placeholder="Example: Sunday, Monday"></label>
+    <label>Main image URL<input name="image_url" placeholder="Paste image URL"></label>
+    <label>Gallery URLs<textarea name="gallery_images" rows="3" placeholder="One image or video URL per line"></textarea></label>
+    <label class="switch-row"><input name="is_booking_active" type="checkbox" checked> Accept bookings</label>
+    <button class="btn btn-primary" type="submit">Save business</button>
+    <p id="business-profile-error" class="form-error" hidden></p>
+  </form>
+</main>
+{% endblock %}
+
+{% block bottom_nav %}
+<nav class="bottom-nav">
+  <a href="{{ url_for('pages.business_dashboard') }}">Dashboard</a>
+  <a class="active" href="{{ url_for('pages.business_profile') }}">Profile</a>
+  <a href="{{ url_for('pages.business_slots') }}">Slots</a>
+  <a href="{{ url_for('pages.business_settings') }}">Settings</a>
+</nav>
+{% endblock %}

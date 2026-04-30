@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+<main class="page with-bottom-nav">
+  <header class="page-header">
+    <h1>Business settings</h1>
+  </header>
+  <section class="settings-group">
+    <a class="settings-row" href="{{ url_for('pages.business_profile') }}">Edit Profile<span>Update business details and pricing</span></a>
+    <button class="settings-row" type="button">Account Info<span>{{ user.email }}</span></button>
+    <button class="settings-row" type="button">Help / Support<span>Get help managing your business</span></button>
+    <button class="settings-row" type="button">Policies<span>Booking and cancellation information</span></button>
+    <button class="settings-row" type="button">About Us<span>Built for easy local booking</span></button>
+    <button id="logout-button" class="settings-row danger" type="button">Logout<span>Sign out of this device</span></button>
+  </section>
+</main>
+{% endblock %}
+
+{% block bottom_nav %}
+<nav class="bottom-nav">
+  <a href="{{ url_for('pages.business_dashboard') }}">Dashboard</a>
+  <a href="{{ url_for('pages.business_profile') }}">Profile</a>
+  <a href="{{ url_for('pages.business_slots') }}">Slots</a>
+  <a class="active" href="{{ url_for('pages.business_settings') }}">Settings</a>
+</nav>
+{% endblock %}

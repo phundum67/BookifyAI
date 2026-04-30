@@ -3,7 +3,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from ..extensions import db
 from ..models import User
-from ..utils.auth import get_current_user, login_required, login_user, logout_user
+from ..utils.auth import generate_auth_token, get_current_user, login_required, login_user, logout_user
 from ..utils.responses import error, success
 from ..utils.validation import validate_email
 
@@ -39,7 +39,7 @@ def signup():
     db.session.add(user)
     db.session.commit()
     login_user(user)
-    return success("Signup successful.", {"user": user.to_dict()}, 201)
+    return success("Signup successful.", {"user": user.to_dict(), "token": generate_auth_token(user)}, 201)
 
 
 @auth_bp.post("/login")
@@ -53,7 +53,7 @@ def login():
         return error("Invalid credentials.", ["Email or password is incorrect."], 401)
 
     login_user(user)
-    return success("Login successful.", {"user": user.to_dict()})
+    return success("Login successful.", {"user": user.to_dict(), "token": generate_auth_token(user)})
 
 
 @auth_bp.post("/logout")
@@ -80,7 +80,7 @@ def update_role():
     user = get_current_user()
     user.account_type = role
     db.session.commit()
-    return success("Account type updated.", {"user": user.to_dict()})
+    return success("Account type updated.", {"user": user.to_dict(), "token": generate_auth_token(user)})
 
 
 @auth_bp.patch("/profile")
@@ -91,6 +91,7 @@ def update_profile():
     name = (payload.get("name") or "").strip()
     email = (payload.get("email") or "").strip().lower()
     phone = (payload.get("phone") or "").strip()
+    profile_image = payload.get("profile_image")
 
     errors = []
     if not name:
@@ -106,5 +107,7 @@ def update_profile():
     user.name = name
     user.email = email
     user.phone = phone
+    if "profile_image" in payload:
+        user.profile_image = profile_image or None
     db.session.commit()
-    return success("Profile updated successfully.", {"user": user.to_dict()})
+    return success("Profile updated successfully.", {"user": user.to_dict(), "token": generate_auth_token(user)})

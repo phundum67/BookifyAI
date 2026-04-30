@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block content %}
+<main class="page landing-page">
+  <section class="hero-card hero-card-large">
+    <p class="eyebrow">Local bookings made simple</p>
+    <h1>Book trusted places near you in a few taps.</h1>
+    <p class="muted">Find turfs, pools, karaoke rooms, hotels, rentals, salons, gyms, and more without waiting for manual availability checks.</p>
+    <div class="button-row">
+      <a class="btn btn-primary" href="{{ url_for('pages.signup') }}">Create account</a>
+      <a class="btn btn-secondary" href="{{ url_for('pages.login') }}">Login</a>
+    </div>
+  </section>
+  <section class="card">
+    <h2>For customers and local businesses</h2>
+    <p class="muted">Customers can browse and book instantly. Businesses can manage profiles, slots, bookings, and daily activity from one clean mobile dashboard.</p>
+  </section>
+</main>
+{% endblock %}

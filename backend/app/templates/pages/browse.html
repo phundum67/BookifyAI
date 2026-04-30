@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+<main class="page with-bottom-nav">
+  <header class="page-header">
+    <h1>Browse</h1>
+    <button class="icon-button" data-notification-button aria-label="Notifications">
+      <span>!</span><b data-unread-badge hidden>0</b>
+    </button>
+  </header>
+  <section class="filter-card">
+    <div class="two-col">
+      <input id="browse-search" placeholder="Search businesses">
+      <select id="browse-category"><option value="">Category</option></select>
+    </div>
+    <div class="search-line">
+      <input id="browse-location" placeholder="Location">
+      <button id="browse-submit" class="btn btn-primary">Search</button>
+    </div>
+    <div id="price-filters" class="scroll-chips"></div>
+    <button id="category-toggle" class="btn btn-secondary wide" type="button">Show more</button>
+    <div id="browse-categories" class="chip-grid collapsible"></div>
+  </section>
+  <section class="section-block flat">
+    <div class="section-title">
+      <h2>Available places</h2>
+      <span id="result-count" class="muted"></span>
+    </div>
+    <div id="browse-results" class="business-grid list-mobile"></div>
+  </section>
+</main>
+{% endblock %}
+
+{% block bottom_nav %}
+<nav class="bottom-nav">
+  <a href="{{ url_for('pages.customer_home') }}">Home</a>
+  <a class="active" href="{{ url_for('pages.browse') }}">Browse</a>
+  <a href="{{ url_for('pages.customer_bookings') }}">Bookings</a>
+  <a href="{{ url_for('pages.customer_settings') }}">Settings</a>
+</nav>
+{% endblock %}

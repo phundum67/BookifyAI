@@ -1,6 +1,22 @@
 from app.extensions import db
 from app.models import Business, User
+from app.config import FRONTEND_ORIGIN
 from werkzeug.security import generate_password_hash
+
+
+def test_cors_allows_deployed_frontend_for_api_preflight(client):
+    response = client.options(
+        "/api/auth/signup",
+        headers={
+            "Origin": FRONTEND_ORIGIN,
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["Access-Control-Allow-Origin"] == FRONTEND_ORIGIN
+    assert response.headers["Access-Control-Allow-Credentials"] == "true"
 
 
 def signup_and_role(client, email, role, name="Test User"):

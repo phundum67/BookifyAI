@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<main class="page with-bottom-nav">
+  <header class="app-header">
+    <div>
+      <p class="eyebrow">Business</p>
+      <h1>Dashboard</h1>
+    </div>
+    <a class="icon-button" href="{{ url_for('pages.business_settings') }}" aria-label="Settings">...</a>
+  </header>
+  <section id="next-booking-card" class="hero-card compact-hero"></section>
+  <section id="dashboard-stats" class="stat-grid"></section>
+  <section class="section-block">
+    <div class="section-title">
+      <h2>Quick actions</h2>
+    </div>
+    <div class="quick-grid">
+      <a class="quick-card" href="{{ url_for('pages.business_profile') }}">Edit Profile</a>
+      <a class="quick-card" href="{{ url_for('pages.business_slots') }}">Manage Slots</a>
+      <a class="quick-card" href="{{ url_for('pages.business_bookings') }}">View Bookings</a>
+      <a class="quick-card" href="{{ url_for('pages.business_settings') }}">Settings</a>
+    </div>
+  </section>
+  <section class="section-block">
+    <div class="section-title">
+      <h2>Recent bookings</h2>
+      <a href="{{ url_for('pages.business_bookings') }}">View all</a>
+    </div>
+    <div id="recent-business-bookings" class="stack"></div>
+  </section>
+</main>
+{% endblock %}
+
+{% block bottom_nav %}
+<nav class="bottom-nav">
+  <a class="active" href="{{ url_for('pages.business_dashboard') }}">Dashboard</a>
+  <a href="{{ url_for('pages.business_profile') }}">Profile</a>
+  <a href="{{ url_for('pages.business_slots') }}">Slots</a>
+  <a href="{{ url_for('pages.business_settings') }}">Settings</a>
+</nav>
+{% endblock %}
