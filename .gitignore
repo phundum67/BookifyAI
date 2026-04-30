@@ -5,3 +5,6 @@ backend/.pytest_cache/
 backend/.venv/
 frontend/node_modules/
 frontend/dist/
+backend/frontend/node_modules/
+backend/frontend/dist/
+mobile-expo/dist-check/
