@@ -1,4 +1,4 @@
-import { ClerkProvider, useAuth, useClerk } from "@clerk/expo";
+import { ClerkProvider, isClerkRuntimeError, useAuth, useClerk } from "@clerk/expo";
 import { tokenCache } from "@clerk/expo/token-cache";
 import React, { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from "react-native";
@@ -50,11 +50,32 @@ function MissingClerkConfigurationScreen() {
   );
 }
 
+function AuthSyncFailedScreen({ onRetry, onLogout }) {
+  return (
+    <SafeAreaView style={styles.center}>
+      <View style={styles.unknownAccountCard}>
+        <Text style={styles.unknownAccountTitle}>We could not load your account</Text>
+        <Text style={styles.unknownAccountText}>
+          Clerk signed you in, but Booklify could not finish syncing your account with the backend yet.
+        </Text>
+        <Pressable style={({ pressed }) => [styles.retryButton, pressed && styles.noticeActionPressed]} onPress={onRetry}>
+          <Text style={styles.retryButtonText}>Try again</Text>
+        </Pressable>
+        <Pressable style={({ pressed }) => [styles.secondaryLinkButton, pressed && styles.noticeActionPressed]} onPress={onLogout}>
+          <Text style={styles.secondaryLinkButtonText}>Log out</Text>
+        </Pressable>
+      </View>
+    </SafeAreaView>
+  );
+}
+
 function AppShell() {
   const { getToken, isLoaded, isSignedIn } = useAuth();
-  const { signOut } = useClerk();
+  const clerk = useClerk();
+  const { signOut } = clerk;
   const [booting, setBooting] = useState(true);
   const [user, setUser] = useState(null);
+  const [authSyncFailed, setAuthSyncFailed] = useState(false);
   const [authMode, setAuthMode] = useState("login");
   const [customerTab, setCustomerTab] = useState("home");
   const [businessTab, setBusinessTab] = useState("dashboard");
@@ -62,12 +83,13 @@ function AppShell() {
   const [selectedBusinessId, setSelectedBusinessId] = useState(null);
   const [recentlyViewed, setRecentlyViewed] = useState([]);
   const [browseFilters, setBrowseFilters] = useState({ category: "", subcategory: "" });
+  const [browseSnapshot, setBrowseSnapshot] = useState(null);
   const [notice, setNotice] = useState(null);
 
   useEffect(() => {
     setAccessTokenProvider(async () => {
       if (!isLoaded || !isSignedIn) return null;
-      return getToken();
+      return getToken({ skipCache: true });
     });
 
     return () => {
@@ -82,31 +104,41 @@ function AppShell() {
     setSelectedBusinessId(null);
     setRecentlyViewed([]);
     setBrowseFilters({ category: "", subcategory: "" });
+    setBrowseSnapshot(null);
+    setAuthSyncFailed(false);
     setNotice(null);
     if (authModeValue) {
       setAuthMode(authModeValue);
     }
   }
 
-  const syncCurrentUser = useCallback(async ({ showError = true } = {}) => {
+  const syncCurrentUser = useCallback(async ({ overrideToken = null, showError = true } = {}) => {
     if (!isLoaded || !isSignedIn) {
       setUser(null);
       return null;
     }
 
     try {
-      const payload = await api("/auth/me");
+      const freshToken =
+        overrideToken ||
+        (await clerk.session?.getToken?.({ skipCache: true })) ||
+        (await getToken({ skipCache: true }));
+      const payload = await api("/auth/me", {
+        headers: freshToken ? { Authorization: `Bearer ${freshToken}` } : undefined
+      });
       const nextUser = payload.data.user || null;
       setUser(nextUser);
+      setAuthSyncFailed(false);
       return nextUser;
     } catch (error) {
       setUser(null);
+      setAuthSyncFailed(true);
       if (showError) {
         handleApiError(error);
       }
       return null;
     }
-  }, [isLoaded, isSignedIn]);
+  }, [clerk, getToken, isLoaded, isSignedIn]);
 
   useEffect(() => {
     let cancelled = false;
@@ -124,11 +156,10 @@ function AppShell() {
       setBooting(true);
       const nextUser = await syncCurrentUser({ showError: false });
       if (!cancelled && !nextUser) {
+        setAuthSyncFailed(true);
         setNotice(normalizeNotice("We could not finish syncing your account with the backend."));
       }
-      if (!cancelled) {
-        setBooting(false);
-      }
+      setBooting(false);
     }
 
     bootstrap();
@@ -136,12 +167,51 @@ function AppShell() {
     return () => {
       cancelled = true;
     };
-  }, [isLoaded, isSignedIn, syncCurrentUser]);
+  }, [isLoaded, isSignedIn]);
 
   async function logout() {
-    await signOut();
-    setUser(null);
-    resetSessionUiState({ authModeValue: "login" });
+    try {
+      const activeSessionId = clerk.session?.id || clerk.client?.lastActiveSessionId || undefined;
+      await signOut(activeSessionId ? { sessionId: activeSessionId } : undefined);
+      await clerk.client?.removeSessions?.();
+      setUser(null);
+      resetSessionUiState({ authModeValue: "login" });
+    } catch (error) {
+      const message = String(error?.message || "").toLowerCase();
+      const isNetworkFailure =
+        message.includes("network") ||
+        message.includes("fetch") ||
+        message.includes("internet") ||
+        message.includes("timeout");
+
+      if (isNetworkFailure) {
+        await clerk.client?.removeSessions?.();
+        setUser(null);
+        resetSessionUiState({ authModeValue: "login" });
+        setNotice(
+          normalizeNotice({
+            tone: "info",
+            title: "Signed out on this device",
+            message: "We signed you out locally, but the server sign-out is still waiting for a connection.",
+            helperTitle: "You can continue safely",
+            helperText: "Once your internet is stable again, Clerk will catch up on the server side."
+          })
+        );
+        return;
+      }
+
+      setNotice(
+        normalizeNotice({
+          tone: "error",
+          title: isClerkRuntimeError(error) ? "Could not sign out" : "Sign-out failed",
+          message: isClerkRuntimeError(error)
+            ? "Clerk could not finish signing you out right now."
+            : "We could not sign you out right now.",
+          helperTitle: "Please try again",
+          helperText: "Your current session is still active until sign-out completes successfully."
+        })
+      );
+    }
   }
 
   function handleAuth(nextUser) {
@@ -364,7 +434,7 @@ function AppShell() {
   } else if (!isSignedIn) {
     content = <AuthScreen mode={authMode} onModeChange={setAuthMode} onSignedIn={syncCurrentUser} onError={handleApiError} />;
   } else if (!user) {
-    content = (
+    content = authSyncFailed ? <AuthSyncFailedScreen onRetry={() => syncCurrentUser()} onLogout={logout} /> : (
       <SafeAreaView style={styles.center}>
         <ActivityIndicator color={COLORS.accent} />
       </SafeAreaView>
@@ -392,9 +462,12 @@ function AppShell() {
           activeTab={customerTab}
           initialCategory={browseFilters.category}
           initialSubcategory={browseFilters.subcategory}
+          onInitialFiltersApplied={() => setBrowseFilters({ category: "", subcategory: "" })}
+          onSnapshotChange={setBrowseSnapshot}
           onTabChange={setCustomerTab}
           onOpenBusiness={openCustomerBusiness}
           onError={handleApiError}
+          snapshot={browseSnapshot}
         />
       );
     } else if (customerTab === "bookings") {
@@ -406,7 +479,7 @@ function AppShell() {
     }
   } else if (user.account_type === "Business") {
     if (businessProfileOpen) {
-      content = <BusinessProfileScreen activeTab="settings" onBack={closeBusinessProfile} onTabChange={setBusinessTab} onError={handleApiError} />;
+      content = <BusinessProfileScreen activeTab="settings" onBack={closeBusinessProfile} onTabChange={setBusinessTab} onError={handleApiError} onSuccess={handleApiError} />;
     } else if (businessTab === "slots") {
       content = <BusinessSlotsScreen activeTab={businessTab} onOpenProfile={openBusinessProfile} onTabChange={setBusinessTab} onError={handleApiError} />;
     } else if (businessTab === "bookings") {
@@ -433,7 +506,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       {publishableKey ? (
-        <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+        <ClerkProvider publishableKey={publishableKey} telemetry={false} tokenCache={tokenCache}>
           <AppShell />
         </ClerkProvider>
       ) : (
@@ -597,5 +670,29 @@ const styles = StyleSheet.create({
     color: "#111111",
     fontSize: 16,
     fontWeight: "900"
+  },
+  retryButton: {
+    alignItems: "center",
+    backgroundColor: "#F8FAFC",
+    borderRadius: 16,
+    justifyContent: "center",
+    marginTop: 22,
+    minHeight: 50
+  },
+  retryButtonText: {
+    color: "#111111",
+    fontSize: 16,
+    fontWeight: "900"
+  },
+  secondaryLinkButton: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 10,
+    minHeight: 42
+  },
+  secondaryLinkButtonText: {
+    color: COLORS.light,
+    fontSize: 14,
+    fontWeight: "800"
   }
 });
